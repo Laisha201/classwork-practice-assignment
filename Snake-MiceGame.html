@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Snake — Blue Snake Eats Mice</title>
+<style>
+  :root{
+    --bg:#0f1724;
+    --panel:#0b1220;
+    --muted:#9aa4b2;
+    --accent:#60a5fa;
+    --card:#071024;
+    --radius:12px;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+  html,body{height:100%;margin:0;background:
+    radial-gradient(800px 300px at 10% 10%, rgba(96,165,250,0.06), transparent 6%),
+    var(--bg); color:#e6eef8}
+  .wrap{max-width:980px;margin:28px auto;padding:18px}
+  header{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+  .logo{width:64px;height:64px;border-radius:12px;background:linear-gradient(180deg,#1e3a8a,#60a5fa);display:grid;place-items:center;font-weight:700;color:white;font-size:20px;box-shadow:0 10px 30px rgba(2,6,23,0.6)}
+  h1{margin:0;font-size:20px}
+  p.lead{margin:4px 0 0 0;color:var(--muted);font-size:13px}
+
+  .panel{
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:var(--radius);
+    box-shadow: 0 10px 30px rgba(2,6,23,0.6);
+    padding:14px;
+    display:grid;
+    grid-template-columns: 1fr 260px;
+    gap:12px;
+  }
+  @media (max-width:860px){ .panel{grid-template-columns:1fr} }
+
+  /* Game area */
+  .game-wrap{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    align-items:center;
+    padding:10px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
+    border-radius:10px;
+  }
+  canvas{
+    background:linear-gradient(180deg,#071126,#042033);
+    border-radius:8px;
+    width:100%;
+    max-width:720px;
+    height:auto;
+    box-shadow: inset 0 -8px 40px rgba(0,0,0,0.4), 0 14px 36px rgba(2,6,23,0.6);
+    touch-action: none;
+  }
+  .controls-row{display:flex;gap:8px;align-items:center}
+  .btn{
+    background:transparent;border:1px solid rgba(255,255,255,0.06);
+    padding:8px 12px;border-radius:10px;color:inherit;font-weight:600;cursor:pointer;
+  }
+  .btn.primary{background:linear-gradient(90deg,#60a5fa,#1e3a8a);color:white;border:0;box-shadow:0 8px 20px rgba(96,165,250,0.12)}
+  .btn:active{transform:translateY(1px)}
+
+  /* Sidebar */
+  .sidebar{padding:12px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));display:flex;flex-direction:column;gap:10px;align-items:stretch}
+  .stat{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:rgba(255,255,255,0.01);font-size:14px}
+  label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+  select,input[type=range]{width:100%}
+  .footer-note{color:var(--muted);font-size:12px;text-align:center;padding-top:8px}
+
+  /* on-screen arrows for touch */
+  .dpad{display:none;gap:6px;margin-top:6px}
+  .dpad button{width:56px;height:56px;border-radius:10px;border:0;background:rgba(255,255,255,0.02);color:var(--muted);font-weight:700;font-size:18px}
+  @media (max-width:640px){ .dpad{display:flex} .sidebar{order:3} }
+
+  /* accessibility */
+  .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+</style>
+</head>
+<body>
+  <main class="wrap" id="app">
+    <header>
+      <div class="logo" aria-hidden="true">S</div>
+      <div>
+        <h1>Snake — Blue Snake Eats Mice</h1>
+        <p class="lead">Classic snake gameplay. Use arrow keys / WASD or swipe (mobile). The snake is blue and food are little mice 🐭.</p>
+      </div>
+    </header>
+
+    <section class="panel" aria-label="snake game panel">
+      <div class="game-wrap" id="gameColumn">
+        <canvas id="gameCanvas" width="720" height="480" role="img" aria-label="Snake game canvas"></canvas>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;width:100%;gap:10px;flex-wrap:wrap">
+          <div class="controls-row">
+            <button class="btn primary" id="startBtn" aria-pressed="false">Start</button>
+            <button class="btn" id="pauseBtn">Pause</button>
+            <button class="btn" id="resetBtn">Reset</button>
+          </div>
+
+          <div style="display:flex;gap:10px;align-items:center">
+            <div style="font-size:13px;color:var(--muted)">Score</div>
+            <div id="score" style="font-weight:800;font-size:16px;min-width:44px;text-align:center">0</div>
+            <div style="font-size:13px;color:var(--muted)">Level</div>
+            <div id="level" style="font-weight:700;min-width:30px;text-align:center">1</div>
+          </div>
+        </div>
+
+        <div class="dpad" aria-hidden="true">
+          <div style="display:flex;justify-content:center;width:100%"><button data-dir="up">↑</button></div>
+          <div style="display:flex;justify-content:space-between;width:100%">
+            <button data-dir="left">←</button>
+            <div style="width:56px"></div>
+            <button data-dir="right">→</button>
+          </div>
+          <div style="display:flex;justify-content:center;width:100%"><button data-dir="down">↓</button></div>
+        </div>
+
+        <div class="footer-note">Tip: eat mice 🐭 to grow. Don't run into walls or yourself. Wrap-around setting is optional below.</div>
+      </div>
+
+      <aside class="sidebar" aria-label="game settings">
+        <div class="stat"><div style="color:var(--muted)">Speed</div>
+          <div><input id="speedRange" type="range" min="4" max="18" step="1" value="9" aria-label="game speed"></div>
+        </div>
+
+        <div class="stat"><div style="color:var(--muted)">Grid size</div>
+          <div>
+            <select id="gridSize">
+              <option value="12">Small (12px)</option>
+              <option value="18" selected>Normal (18px)</option>
+              <option value="24">Large (24px)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="stat"><div style="color:var(--muted)">Wrap edges</div>
+          <div><input id="wrapToggle" type="checkbox" /> <label for="wrapToggle" style="margin-left:6px;color:var(--muted)">On</label></div>
+        </div>
+
+        <div class="stat"><div style="color:var(--muted)">Show grid</div>
+          <div><input id="gridToggle" type="checkbox" /> <label for="gridToggle" style="margin-left:6px;color:var(--muted)">On</label></div>
+        </div>
+
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="saveBtn" title="Download a PNG screenshot of the canvas">Save image</button>
+          <button class="btn" id="muteBtn" aria-pressed="false" title="Toggle sound">🔊</button>
+        </div>
+
+        <div style="font-size:13px;color:var(--muted);margin-top:8px">
+          Controls: arrow keys / WASD / swipe. Pause with Space.
+        </div>
+      </aside>
+    </section>
+  </main>
+
+<script>
+/*
+  Snake — Blue Snake Eats Mice
+  Single-file implementation:
+    - Canvas-based grid
+    - Blue snake
+    - Food displayed as a mouse emoji 🐭
+    - Controls: Arrow keys, WASD, swipe (touch), on-screen dpad (mobile)
+    - Settings: speed, grid size, wrap edges, show grid
+    - Start/Pause/Reset, score, level, screenshot
+*/
+
+(() => {
+  // DOM
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const startBtn = document.getElementById('startBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const scoreEl = document.getElementById('score');
+  const levelEl = document.getElementById('level');
+  const speedRange = document.getElementById('speedRange');
+  const gridSizeSel = document.getElementById('gridSize');
+  const wrapToggle = document.getElementById('wrapToggle');
+  const gridToggle = document.getElementById('gridToggle');
+  const saveBtn = document.getElementById('saveBtn');
+  const muteBtn = document.getElementById('muteBtn');
+  const dpad = document.querySelectorAll('.dpad button');
+
+  // Game state
+  let CELL = parseInt(gridSizeSel.value, 10); // pixels per cell
+  let COLS = Math.floor(canvas.width / CELL);
+  let ROWS = Math.floor(canvas.height / CELL);
+  let speed = parseInt(speedRange.value, 10);
+  let wrap = !!wrapToggle.checked;
+  let showGrid = !!gridToggle.checked;
+  let running = false;
+  let tickTimer = 0;
+  let tickInterval = 1000 / speed; // will be recalculated per frame
+  let dir = {x:1,y:0}; // initial direction (right)
+  let nextDir = null; // queued direction
+  let snake = [];
+  let food = null;
+  let score = 0;
+  let level = 1;
+  let mouseEmoji = '🐭';
+  let seeds = 0; // used to adjust difficulty on food eaten
+  let muted = false;
+
+  // sound (tiny)
+  const sounds = {
+    eat: (muted?null:new Audio()),
+    crash: (muted?null:new Audio())
+  };
+  // we won't set src to avoid depending on external files; use simple oscillator if needed
+  function beep(freq=440,dur=80,vol=0.05){
+    if(muted) return;
+    try{
+      const ctxA = new (window.AudioContext||window.webkitAudioContext)();
+      const o = ctxA.createOscillator();
+      const g = ctxA.createGain();
+      o.type = 'sine';
+      o.frequency.value = freq;
+      g.gain.value = vol;
+      o.connect(g); g.connect(ctxA.destination);
+      o.start();
+      setTimeout(()=>{ o.stop(); ctxA.close(); }, dur);
+    }catch(e){}
+  }
+
+  // responsive canvas sizing helper (keeps internal pixel size, scales CSS)
+  function fitCanvas(){
+    // fixed internal resolution for crisp grid; keep aspect ratio 3:2
+    const maxWidth = Math.min(window.innerWidth - 48, 980);
+    const targetWidth = Math.max(360, Math.min(900, maxWidth));
+    const aspect = 4/3; // width/height ratio
+    const targetHeight = Math.round(targetWidth / aspect);
+    canvas.style.width = targetWidth + 'px';
+    canvas.style.height = targetHeight + 'px';
+    // internal pixel buffer stays at initial width/height to keep crisp drawing
+  }
+
+  window.addEventListener('resize', fitCanvas);
+  fitCanvas();
+
+  // Initialize grid values
+  function recalcGrid(){
+    CELL = parseInt(gridSizeSel.value,10);
+    COLS = Math.floor(canvas.width / CELL);
+    ROWS = Math.floor(canvas.height / CELL);
+  }
+  recalcGrid();
+
+  // Utility: RNG for cell aligned positions
+  function randCell(){
+    return {
+      x: Math.floor(Math.random() * COLS),
+      y: Math.floor(Math.random() * ROWS)
+    };
+  }
+
+  // Start a new game
+  function resetGame(){
+    // fit snake to center
+    recalcGrid();
+    snake = [];
+    const startLength = 4;
+    const startX = Math.floor(COLS / 2);
+    const startY = Math.floor(ROWS / 2);
+    for(let i = startLength-1; i >= 0; i--){
+      snake.push({ x: startX - i, y: startY });
+    }
+    dir = {x:1,y:0};
+    nextDir = null;
+    placeFood();
+    score = 0;
+    level = 1;
+    seeds = 0;
+    updateScoreUI();
+    running = false;
+    startBtn.textContent = 'Start';
+    tickTimer = 0;
+  }
+
+  function updateScoreUI(){
+    scoreEl.textContent = score;
+    levelEl.textContent = level;
+  }
+
+  function placeFood(){
+    let tries = 0;
+    while(true){
+      const p = randCell();
+      // avoid placing on the snake
+      const collide = snake.some(s => s.x === p.x && s.y === p.y);
+      if(!collide){
+        food = p;
+        break;
+      }
+      if(++tries > 500){ // fallback
+        food = {x:0,y:0};
+        break;
+      }
+    }
+  }
+
+  // Direction helpers
+  function setDirection(dx,dy){
+    // prevent reversing directly
+    if(dx === -dir.x && dy === -dir.y) return;
+    nextDir = {x:dx,y:dy};
+  }
+
+  // Keyboard controls
+  window.addEventListener('keydown', (e) => {
+    if(e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { setDirection(0,-1); e.preventDefault(); }
+    if(e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') { setDirection(0,1); e.preventDefault(); }
+    if(e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { setDirection(-1,0); e.preventDefault(); }
+    if(e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { setDirection(1,0); e.preventDefault(); }
+    if(e.key === ' '){ // space toggles pause
+      togglePause(); e.preventDefault();
+    }
+    if(e.key === 'Enter'){ // start if not running
+      if(!running) startGame();
+    }
+  });
+
+  // On-screen dpad (mobile)
+  dpad.forEach(btn=>{
+    btn.addEventListener('click', ()=> {
+      const d = btn.dataset.dir;
+      if(d === 'up') setDirection(0,-1);
+      if(d === 'down') setDirection(0,1);
+      if(d === 'left') setDirection(-1,0);
+      if(d === 'right') setDirection(1,0);
+    });
+  });
+
+  // Touch swipe detection
+  let touchStart = null;
+  canvas.addEventListener('touchstart', (e) => {
+    if(e.touches.length === 1){
+      const t = e.touches[0];
+      touchStart = {x: t.clientX, y: t.clientY, time: Date.now()};
+    }
+  }, {passive:true});
+  canvas.addEventListener('touchend', (e) => {
+    if(!touchStart) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStart.x;
+    const dy = t.clientY - touchStart.y;
+    const absX = Math.abs(dx), absY = Math.abs(dy);
+    if(Math.max(absX,absY) > 20){
+      if(absX > absY){
+        if(dx > 0) setDirection(1,0); else setDirection(-1,0);
+      } else {
+        if(dy > 0) setDirection(0,1); else setDirection(0,-1);
+      }
+    } else {
+      // small tap -> try to 'start' game or quick eat? we'll ignore
+    }
+    touchStart = null;
+  }, {passive:true});
+
+  // Main game tick
+  let lastFrame = performance.now();
+  function frame(now){
+    const delta = now - lastFrame;
+    lastFrame = now;
+
+    // speed controls tick timing
+    const s = parseInt(speedRange.value,10);
+    // map slider (4..18) to ticks per second. Higher slider => faster.
+    const ticksPerSecond = s; // simple mapping
+    tickInterval = 1000 / ticksPerSecond;
+    tickTimer += delta;
+
+    if(running){
+      while(tickTimer >= tickInterval){
+        tickTimer -= tickInterval;
+        step();
+      }
+    }
+
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  // Game step (move snake)
+  function step(){
+    // apply queued direction
+    if(nextDir){ dir = nextDir; nextDir = null; }
+
+    const head = { x: snake[snake.length -1].x + dir.x, y: snake[snake.length -1].y + dir.y };
+
+    // handle wrap or wall collision
+    if(wrap){
+      head.x = (head.x + COLS) % COLS;
+      head.y = (head.y + ROWS) % ROWS;
+    } else {
+      if(head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS){
+        return gameOver();
+      }
+    }
+
+    // self collision?
+    if(snake.some(segment => segment.x === head.x && segment.y === head.y)){
+      return gameOver();
+    }
+
+    // push new head
+    snake.push(head);
+
+    // check food
+    if(food && head.x === food.x && head.y === food.y){
+      // ate food
+      score += 10;
+      seeds++;
+      level = 1 + Math.floor(seeds / 5);
+      updateScoreUI();
+      placeFood();
+      beep(880,90,0.06);
+      // optionally increase speed as you eat
+    } else {
+      // move: remove tail
+      snake.shift();
+    }
+  }
+
+  function gameOver(){
+    running = false;
+    beep(120,300,0.08);
+    startBtn.textContent = 'Start';
+    // flash effect / message
+    // simple alert-free visual: briefly draw red overlay
+    flashRed();
+  }
+
+  function flashRed(){
+    const s = 200;
+    const original = ctx.fillStyle;
+    ctx.fillStyle = 'rgba(255,40,40,0.12)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    setTimeout(()=>{ /* no-op, will be cleared next render */ }, s);
+  }
+
+  // Render function
+  function render(){
+    // clear full canvas (use integer dims)
+    ctx.fillStyle = '#071126';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // optionally draw grid
+    if(gridToggle.checked){
+      ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+      ctx.lineWidth = 1;
+      for(let x=0;x<=COLS;x++){
+        ctx.beginPath();
+        ctx.moveTo(x*CELL+0.5,0);
+        ctx.lineTo(x*CELL+0.5, canvas.height);
+        ctx.stroke();
+      }
+      for(let y=0;y<=ROWS;y++){
+        ctx.beginPath();
+        ctx.moveTo(0,y*CELL+0.5);
+        ctx.lineTo(canvas.width, y*CELL+0.5);
+        ctx.stroke();
+      }
+    }
+
+    // draw food as mouse emoji centered in cell
+    if(food){
+      const fx = food.x * CELL;
+      const fy = food.y * CELL;
+      // emoji drawing
+      ctx.save();
+      // choose font size relative to cell
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = Math.floor(CELL * 0.9) + 'px serif';
+      // shadow for emoji
+      ctx.shadowColor = 'rgba(0,0,0,0.45)';
+      ctx.shadowBlur = 6;
+      ctx.fillText(mouseEmoji, fx + CELL/2, fy + CELL/2 + 2);
+      ctx.restore();
+    }
+
+    // draw snake
+    if(snake.length){
+      for(let i=0;i<snake.length;i++){
+        const s = snake[i];
+        const x = s.x * CELL;
+        const y = s.y * CELL;
+
+        // head has slightly different look
+        if(i === snake.length -1){
+          // head with gradient blue
+          const g = ctx.createLinearGradient(x, y, x+CELL, y+CELL);
+          g.addColorStop(0, '#60a5fa');
+          g.addColorStop(1, '#1e3a8a');
+          ctx.fillStyle = g;
+          roundRect(ctx, x+1, y+1, CELL-2, CELL-2, Math.max(4, CELL/6));
+          ctx.fill();
+
+          // eyes
+          ctx.fillStyle = '#071126';
+          const eyeOffsetX = CELL*0.18;
+          const eyeOffsetY = CELL*0.25;
+          const eyeSize = Math.max(2, Math.floor(CELL*0.10));
+          ctx.beginPath();
+          ctx.arc(x + CELL/2 - eyeOffsetX, y + CELL/2 - eyeOffsetY, eyeSize, 0, Math.PI*2);
+          ctx.arc(x + CELL/2 + eyeOffsetX, y + CELL/2 - eyeOffsetY, eyeSize, 0, Math.PI*2);
+          ctx.fill();
+        } else {
+          // body segments: solid blue with slight border
+          ctx.fillStyle = '#1e40af';
+          roundRect(ctx, x+1, y+1, CELL-2, CELL-2, Math.max(3, CELL/8));
+          ctx.fill();
+          // small inner highlight
+          ctx.fillStyle = 'rgba(255,255,255,0.03)';
+          roundRect(ctx, x+Math.max(2,CELL*0.08), y+Math.max(2,CELL*0.08), CELL - Math.max(4,CELL*0.16), CELL - Math.max(4,CELL*0.16), Math.max(2, CELL/10));
+          ctx.fill();
+        }
+      }
+    }
+
+    // HUD overlay: small score top-left (canvas-local)
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.fillRect(6,6,140,34);
+    ctx.fillStyle = '#d8eefc';
+    ctx.font = '14px system-ui, Arial';
+    ctx.fillText('Score: ' + score, 18, 28);
+    ctx.restore();
+  }
+
+  // helper: rounded rect for canvas
+  function roundRect(ctx, x, y, w, h, r){
+    const radius = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+radius, y);
+    ctx.arcTo(x+w, y, x+w, y+h, radius);
+    ctx.arcTo(x+w, y+h, x, y+h, radius);
+    ctx.arcTo(x, y+h, x, y, radius);
+    ctx.arcTo(x, y, x+w, y, radius);
+    ctx.closePath();
+  }
+
+  // Start / Pause / Reset handlers
+  function startGame(){
+    if(!running){
+      running = true;
+      startBtn.textContent = 'Running';
+    }
+  }
+  function togglePause(){
+    if(!running){
+      // if not running, start
+      startGame();
+    } else {
+      // pause
+      running = false;
+      startBtn.textContent = 'Start';
+    }
+  }
+
+  startBtn.addEventListener('click', ()=> {
+    if(!running) startGame();
+    else { running = false; startBtn.textContent = 'Start'; }
+  });
+  pauseBtn.addEventListener('click', () => togglePause());
+  resetBtn.addEventListener('click', () => { resetGame(); });
+
+  // Settings changes
+  gridSizeSel.addEventListener('change', () => {
+    // recalc internal grid (CELL fixed for rendering)
+    recalcGrid();
+    // reposition snake in a gentle reset
+    resetGame();
+  });
+  speedRange.addEventListener('input', ()=>{ /* live speed change handled in frame */ });
+  wrapToggle.addEventListener('change', ()=>{ wrap = !!wrapToggle.checked; });
+  gridToggle.addEventListener('change', ()=>{ showGrid = !!gridToggle.checked; });
+
+  // Save image
+  saveBtn.addEventListener('click', () => {
+    // scale up for download
+    const link = document.createElement('a');
+    link.download = 'snake-screenshot.png';
+    link.href = canvas.toDataURL();
+    link.click();
+  });
+
+  muteBtn.addEventListener('click', ()=>{
+    muted = !muted;
+    muteBtn.textContent = muted ? '🔈' : '🔊';
+    muteBtn.setAttribute('aria-pressed', muted ? 'true' : 'false');
+  });
+
+  // Prevent context menu on canvas (accidental long-press)
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+  // initial setup
+  resetGame();
+  requestAnimationFrame(frame);
+
+  // small helper: ensure canvas internal pixels are set to desired values
+  (function maintainInternalResolution(){
+    // keep internal canvas resolution fixed based on desired initial values for crispness
+    function setInternal() {
+      // choose internal size to be multiple of CELL for crispness
+      // we use 720x540 internal resolution initially (matching width/height attributes),
+      // but if grid size changed, we keep those attributes consistent
+      // ensure canvas.width and canvas.height remain at their set values (720x480) - already set in markup
+      // Recompute COLS/ROWS based on internal dims and CELL
+      recalcGrid();
+    }
+    setInternal();
+  })();
+
+  // Friendly message if user tries to close during running
+  window.addEventListener('beforeunload', (e) => {
+    if(running){
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+
+  // ensure canvas drawing uses integer coordinates (avoid blurriness on some displays)
+  // (No extra action needed because we use integer cell multiplication)
+
+})();
+</script>
+</body>
+</html>

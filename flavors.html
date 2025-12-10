@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ice Cream Flavors</title>
+<style>
+  :root{
+    --bg: #f6f8fb;
+    --card: #ffffff;
+    --muted: #6b7280;
+    --primary: #ff6b6b;
+    --accent: #ffd166;
+    --glass: rgba(255,255,255,0.6);
+    --radius: 16px;
+    --shadow: 0 6px 18px rgba(23,23,23,0.08);
+    --max-width: 1100px;
+    --gap: 18px;
+    --focus: 3px solid rgba(255,107,107,0.18);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+
+  /* Basic page */
+  html,body{
+    height:100%;
+    margin:0;
+    background:
+      radial-gradient(1200px 400px at 10% 10%, rgba(255,215,120,0.06), transparent 6%),
+      radial-gradient(800px 300px at 90% 90%, rgba(111,111,255,0.03), transparent 6%),
+      var(--bg);
+    color:#111827;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+
+  .wrap{
+    max-width:var(--max-width);
+    margin:36px auto;
+    padding:24px;
+  }
+
+  header{
+    display:flex;
+    gap:18px;
+    align-items:center;
+    margin-bottom:22px;
+  }
+
+  .logo{
+    width:72px;
+    height:72px;
+    border-radius:18px;
+    background: linear-gradient(135deg,var(--primary), #ff9f9f);
+    box-shadow: var(--shadow);
+    display:grid;
+    place-items:center;
+    color:white;
+    font-weight:700;
+    font-size:20px;
+    flex:0 0 72px;
+  }
+
+  h1{
+    margin:0;
+    font-size:20px;
+    letter-spacing:-0.2px;
+  }
+  p.lead{
+    margin:6px 0 0 0;
+    color:var(--muted);
+    font-size:13px;
+  }
+
+  /* Controls */
+  .controls{
+    display:flex;
+    gap:12px;
+    margin:18px 0 26px 0;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  .search{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--card);
+    padding:8px 12px;
+    border-radius:12px;
+    box-shadow: var(--shadow);
+    min-width:240px;
+    flex:1 1 320px;
+  }
+  .search input{
+    border:0;
+    outline:0;
+    font-size:15px;
+    background:transparent;
+    width:100%;
+  }
+  .selects{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .chip{
+    background:linear-gradient(180deg,#fff,#f7f8fb);
+    border-radius:999px;
+    padding:8px 12px;
+    border:1px solid rgba(16,24,40,0.04);
+    cursor:pointer;
+    font-size:13px;
+    color:#111827;
+  }
+  .chip[aria-pressed="true"]{
+    background:linear-gradient(90deg,var(--primary),#ff9f9f);
+    color:white;
+    box-shadow: 0 6px 20px rgba(255,107,107,0.12);
+  }
+  .chip:focus{ outline: none; box-shadow: var(--focus); }
+
+  /* Grid */
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:var(--gap);
+  }
+  @media (max-width:980px){ .grid{ grid-template-columns: repeat(2,1fr); } }
+  @media (max-width:640px){ .grid{ grid-template-columns: 1fr; } }
+
+  .card{
+    background:var(--card);
+    border-radius: var(--radius);
+    padding:16px;
+    box-shadow: var(--shadow);
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    transition: transform .16s ease, box-shadow .16s ease;
+    border: 1px solid rgba(16,24,40,0.03);
+  }
+  .card:hover{ transform: translateY(-6px); }
+  .thumb{
+    width:84px;
+    min-width:84px;
+    height:84px;
+    border-radius:12px;
+    display:grid;
+    place-items:center;
+    font-size:32px;
+    background: linear-gradient(135deg,#fff,#fff);
+    box-shadow: inset 0 -6px 18px rgba(0,0,0,0.02);
+    border:1px solid rgba(16,24,40,0.03);
+  }
+  .card h3{
+    margin:0 0 6px 0;
+    font-size:16px;
+  }
+  .meta{
+    margin:0;
+    color:var(--muted);
+    font-size:13px;
+  }
+  .badges{ margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; }
+  .badge{
+    padding:6px 8px;
+    border-radius:999px;
+    font-size:12px;
+    background: rgba(16,24,40,0.04);
+  }
+  .actions{
+    margin-left:auto;
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  .btn{
+    border:0;
+    background:transparent;
+    padding:8px 12px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:600;
+    font-size:13px;
+  }
+  .btn.primary{
+    background:linear-gradient(90deg,var(--primary),#ff9f9f);
+    color:white;
+    box-shadow: 0 6px 18px rgba(255,107,107,0.12);
+  }
+  .btn.ghost{
+    background:transparent;
+    color:var(--muted);
+  }
+  .btn:focus{ outline:none; box-shadow: var(--focus); }
+
+  /* Footer stats */
+  .stats{
+    margin-top:18px;
+    display:flex;
+    gap:12px;
+    align-items:center;
+    color:var(--muted);
+    font-size:13px;
+  }
+
+  /* Modal */
+  .modal-backdrop{
+    position:fixed;
+    inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(180deg, rgba(11,22,39,0.35), rgba(11,22,39,0.45));
+    z-index:50;
+    padding:24px;
+  }
+  .modal{
+    width:100%;
+    max-width:720px;
+    background:var(--card);
+    border-radius:18px;
+    padding:20px;
+    box-shadow: 0 18px 40px rgba(8,15,30,0.45);
+    border: 1px solid rgba(0,0,0,0.05);
+  }
+  .modal header{ display:flex; gap:12px; align-items:center; }
+  .modal h2{ margin:0; font-size:18px; }
+  .modal p{ color:var(--muted); margin:8px 0 0 0; }
+  .modal .close{
+    margin-left:auto;
+    background:transparent;
+    border:0;
+    cursor:pointer;
+    font-size:18px;
+    padding:8px;
+  }
+  .modal .props{ margin-top:12px; display:flex; gap:12px; flex-wrap:wrap; }
+  .modal .cta{ margin-top:18px; display:flex; gap:8px; justify-content:flex-end; }
+
+  /* No results */
+  .no-results{
+    padding:28px;
+    border-radius:12px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.8), rgba(255,255,255,0.6));
+    text-align:center;
+    box-shadow: var(--shadow);
+    color:var(--muted);
+  }
+
+  /* small helpers */
+  .sr-only{ position: absolute!important; width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
+</style>
+</head>
+<body>
+  <main class="wrap" id="app">
+    <header>
+      <div class="logo" aria-hidden="true">IC</div>
+      <div>
+        <h1>Ice Cream Flavor Gallery</h1>
+        <p class="lead">Explore flavors — classics, seasonal picks, and vegan sorbets. Click a card for details.</p>
+      </div>
+    </header>
+
+    <section class="controls" aria-label="search and filters">
+      <div class="search" role="search">
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="#9CA3AF" d="M21 21l-4.35-4.35"></path>
+          <circle cx="11" cy="11" r="6" fill="none" stroke="#9CA3AF" stroke-width="1.6"></circle>
+        </svg>
+        <input id="search" placeholder="Search flavors (name, ingredient, tag)..." aria-label="Search flavors" />
+      </div>
+
+      <div class="selects" role="tablist" aria-label="filter by category">
+        <button class="chip" data-filter="all" aria-pressed="true">All</button>
+        <button class="chip" data-filter="classic" aria-pressed="false">Classic</button>
+        <button class="chip" data-filter="chocolate" aria-pressed="false">Chocolate</button>
+        <button class="chip" data-filter="fruit" aria-pressed="false">Fruit</button>
+        <button class="chip" data-filter="nut" aria-pressed="false">Nutty</button>
+        <button class="chip" data-filter="vegan" aria-pressed="false">Vegan</button>
+      </div>
+
+      <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+        <div aria-live="polite" id="count" style="color:var(--muted); font-size:14px;">Showing 10 flavors</div>
+      </div>
+    </section>
+
+    <section id="grid" class="grid" aria-live="polite" aria-label="flavor list">
+      <!-- Cards will be injected by JS for clarity and maintainability -->
+    </section>
+
+    <div class="stats" aria-hidden="true">
+      <div>Tip: try typing "mint" or filter to "Vegan".</div>
+    </div>
+  </main>
+
+  <!-- Modal -->
+  <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal" role="document">
+      <header>
+        <div style="width:72px;height:72px;border-radius:12px;display:grid;place-items:center;font-size:36px;background:linear-gradient(135deg,var(--accent),#ffecb3);">🍨</div>
+        <div>
+          <h2 id="modalTitle">Flavor</h2>
+          <p id="modalSubtitle" class="meta">Short subtitle</p>
+        </div>
+        <button class="close" id="modalClose" aria-label="Close">✕</button>
+      </header>
+      <div id="modalBody">
+        <p style="margin-top:12px;color:var(--muted);">Extended description about the flavor, ingredients, tasting notes, pairings, and fun facts.</p>
+        <div class="props" id="modalProps" aria-hidden="false"></div>
+        <div class="cta">
+          <button class="btn ghost" id="addToCart">Add to favorites</button>
+          <button class="btn primary" id="tryBtn">Try this flavor</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // Data
+  const flavors = [
+    {
+      id: 'vanilla-bean',
+      name: 'Vanilla Bean',
+      emoji: '🍦',
+      category: ['classic'],
+      short: 'Pure, aromatic Madagascar vanilla with a creamy base.',
+      desc: 'A timeless favorite — smooth custard base infused with real vanilla beans. Great with pie, coffee, or on its own.',
+      tags: ['classic','mild','pairing:pie'],
+      rating: 4.7
+    },
+    {
+      id: 'choc-fudge-brownie',
+      name: 'Chocolate Fudge Brownie',
+      emoji: '🍫',
+      category: ['chocolate'],
+      short: 'Rich chocolate with chewy brownie chunks.',
+      desc: 'Deep chocolate ice cream with thick fudge ribbons and generous brownie chunks for texture and decadence.',
+      tags: ['chocolate','rich','contains-gluten'],
+      rating: 4.8
+    },
+    {
+      id: 'strawberry-swirl',
+      name: 'Strawberry Swirl',
+      emoji: '🍓',
+      category: ['fruit','classic'],
+      short: 'Bright strawberry ribbons in creamy ice cream.',
+      desc: 'Sweet-tart strawberry coulis swirled through a creamy base — tastes like summer.',
+      tags: ['fruit','seasonal','refreshing'],
+      rating: 4.4
+    },
+    {
+      id: 'pistachio',
+      name: 'Pistachio',
+      emoji: '🌰',
+      category: ['nut','classic'],
+      short: 'Roasted pistachio flavor with small nut pieces.',
+      desc: 'Nutty, slightly savory-sweet profile. Uses roasted pistachios for a deep, authentic flavor.',
+      tags: ['nutty','sophisticated'],
+      rating: 4.5
+    },
+    {
+      id: 'mango-sorbet',
+      name: 'Mango Sorbet (Vegan)',
+      emoji: '🥭',
+      category: ['fruit','vegan'],
+      short: 'Bright, dairy-free mango sorbet — pure fruit.',
+      desc: 'Made from ripe mango puree and a touch of citrus. Light, refreshing, and vegan-friendly.',
+      tags: ['vegan','fruit','dairy-free'],
+      rating: 4.6
+    },
+    {
+      id: 'salted-caramel',
+      name: 'Salted Caramel',
+      emoji: '🧂',
+      category: ['classic'],
+      short: 'Sweet caramel balanced with a pinch of sea salt.',
+      desc: 'Silky caramel base with ribbons of salted caramel sauce — great with pretzel toppings.',
+      tags: ['sweet','balanced'],
+      rating: 4.6
+    },
+    {
+      id: 'mint-chip',
+      name: 'Mint Chocolate Chip',
+      emoji: '🌿',
+      category: ['classic','chocolate'],
+      short: 'Cool mint base studded with chocolate chips.',
+      desc: 'Refreshing mint ice cream with crunchy chocolate bits. Classic palate cleanser after a heavy meal.',
+      tags: ['mint','chocolate'],
+      rating: 4.3
+    },
+    {
+      id: 'coconut-lime',
+      name: 'Coconut Lime (Vegan)',
+      emoji: '🥥',
+      category: ['vegan','fruit'],
+      short: 'Coconut milk base with zesty lime.',
+      desc: 'Creamy coconut milk paired with bright lime zest for a tropical, dairy-free treat.',
+      tags: ['vegan','tropical'],
+      rating: 4.2
+    },
+    {
+      id: 'cookies-cream',
+      name: 'Cookies & Cream',
+      emoji: '🍪',
+      category: ['classic'],
+      short: 'Creamy base folded with crunchy cookie pieces.',
+      desc: 'A crowd-pleaser: lots of chocolate cookie pieces in sweet cream — beloved by kids and adults alike.',
+      tags: ['cookies','texture'],
+      rating: 4.7
+    },
+    {
+      id: 'lavender-honey',
+      name: 'Lavender Honey',
+      emoji: '🌸',
+      category: ['classic','seasonal'],
+      short: 'Floral lavender with a touch of honey sweetness.',
+      desc: 'Delicate floral notes balanced by natural honey. Sophisticated and aromatic — best enjoyed slowly.',
+      tags: ['floral','delicate','pairing:tea'],
+      rating: 4.1
+    }
+  ];
+
+  // DOM refs
+  const grid = document.getElementById('grid');
+  const searchInput = document.getElementById('search');
+  const chips = Array.from(document.querySelectorAll('.chip'));
+  const count = document.getElementById('count');
+  const modalBackdrop = document.getElementById('modalBackdrop');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalSubtitle = document.getElementById('modalSubtitle');
+  const modalProps = document.getElementById('modalProps');
+  const modalClose = document.getElementById('modalClose');
+
+  let activeFilter = 'all';
+  let activeQuery = '';
+
+  // Utilities
+  function matches(flavor, query, filter){
+    const q = query.trim().toLowerCase();
+    const inFilter = (filter === 'all') || flavor.category.includes(filter);
+    if(!inFilter) return false;
+    if(!q) return true;
+    const hay = (flavor.name + ' ' + flavor.short + ' ' + flavor.tags.join(' ')).toLowerCase();
+    return hay.indexOf(q) !== -1;
+  }
+
+  function renderGrid(){
+    grid.innerHTML = '';
+    const results = flavors.filter(f => matches(f, activeQuery, activeFilter));
+    count.textContent = `Showing ${results.length} flavor${results.length === 1 ? '' : 's'}`;
+    if(results.length === 0){
+      grid.innerHTML = '<div class="no-results">No flavors match your search or filters. Try "chocolate", "vegan", or clear filters.</div>';
+      return;
+    }
+    results.forEach(f => {
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.setAttribute('tabindex','0');
+      card.innerHTML = `
+        <div class="thumb" aria-hidden="true">${f.emoji}</div>
+        <div style="flex:1;">
+          <h3>${escapeHtml(f.name)}</h3>
+          <p class="meta">${escapeHtml(f.short)}</p>
+          <div class="badges">${f.category.map(c => `<span class="badge">${escapeHtml(capitalize(c))}</span>`).join('')}</div>
+        </div>
+        <div class="actions" aria-hidden="false">
+          <button class="btn ghost" data-id="${f.id}" title="Details">Details</button>
+          <button class="btn primary" data-try="${f.id}">Try</button>
+        </div>
+      `;
+      // click handlers
+      card.querySelector('.btn.ghost').addEventListener('click', ()=>openModal(f.id));
+      card.querySelector('.btn.primary').addEventListener('click', ()=>alert('Marked "'+f.name+'" as wanted — pretend we added it to your list!'));
+      // keyboard accessibility: Enter open details
+      card.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openModal(f.id); }
+      });
+      grid.appendChild(card);
+    });
+  }
+
+  function escapeHtml(s){
+    return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+  }
+  function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+
+  // Filters handling
+  chips.forEach(chip => {
+    chip.addEventListener('click', ()=>{
+      chips.forEach(c => c.setAttribute('aria-pressed','false'));
+      chip.setAttribute('aria-pressed','true');
+      activeFilter = chip.dataset.filter;
+      renderGrid();
+      searchInput.focus();
+    });
+  });
+
+  // Search handling (debounce lightly)
+  let t;
+  searchInput.addEventListener('input', (e)=>{
+    clearTimeout(t);
+    t = setTimeout(()=>{
+      activeQuery = e.target.value;
+      renderGrid();
+    }, 160);
+  });
+
+  // Modal functions
+  function openModal(id){
+    const f = flavors.find(x=>x.id===id);
+    if(!f) return;
+    modalTitle.textContent = f.name;
+    modalSubtitle.textContent = f.short;
+    modalProps.innerHTML = `
+      <div class="badge">Rating: ${f.rating.toFixed(1)} ★</div>
+      ${f.tags.map(t=>`<div class="badge">${escapeHtml(t)}</div>`).join('')}
+    `;
+    // body desc
+    modalBackdrop.querySelector('#modalBody p').textContent = f.desc;
+    modalBackdrop.style.display = 'flex';
+    modalBackdrop.setAttribute('aria-hidden','false');
+    // focus management
+    modalClose.focus();
+    // trap a simple ESC close
+    window.addEventListener('keydown', escHandler);
+  }
+  function closeModal(){
+    modalBackdrop.style.display = 'none';
+    modalBackdrop.setAttribute('aria-hidden','true');
+    window.removeEventListener('keydown', escHandler);
+  }
+  function escHandler(e){
+    if(e.key === 'Escape') closeModal();
+  }
+  modalClose.addEventListener('click', closeModal);
+  modalBackdrop.addEventListener('click', (e)=>{
+    if(e.target === modalBackdrop) closeModal();
+  });
+
+  // initial render
+  renderGrid();
+
+  // safety: tiny accessibility helper
+  document.querySelectorAll('.btn, .chip, .card').forEach(el=>{
+    el.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter') e.target.click && e.target.click();
+    });
+  });
+
+  // small "Try" and "Add to favorites" behavior
+  document.getElementById('addToCart').addEventListener('click', ()=>{
+    alert('Added to favorites (demo).');
+  });
+  document.getElementById('tryBtn').addEventListener('click', ()=>{
+    alert('Nice choice — imagine a scoop being served!');
+  });
+
+})();
+</script>
+</body>
+</html>
